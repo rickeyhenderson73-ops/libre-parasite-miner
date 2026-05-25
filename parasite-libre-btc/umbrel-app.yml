@@ -1,0 +1,72 @@
+manifestVersion: 1
+id: parasite-libre-btc
+category: bitcoin
+name: Parasite Libre BTC
+version: "0.1.0"
+tagline: Mine to Parasite Pool via Libre Node
+description: >-
+  Mine Bitcoin to the Parasite Pool (stratum+tcp://parasite.wtf:42069) using your Libre node.
+  
+  Perfect for Bitaxe and other ASIC miners on Umbrel.
+  
+  Miner connection:
+    - URL: `stratum+tcp://<your-host-ip>:42070`
+    - Username: worker name (optional)
+    - Password: anything
+  
+  Configuration:
+    - Set your BTC payout wallet address in Settings
+    - Configure your Libre RPC node (host, port, credentials)
+    - App monitors shares, hashrate, and connection status
+  
+  Features:
+    - Real-time mining stats (hashrate, shares, difficulty)
+    - Libre node integration (automatic or manual RPC)
+    - Parasite Pool connection (hardcoded)
+    - Worker tracking and statistics
+developer: rickeyhenderson73-ops
+website: https://github.com/rickeyhenderson73-ops/libre-parasite-miner
+repo: https://github.com/rickeyhenderson73-ops/libre-parasite-miner
+support: https://discord.gg/parasite
+dependencies: []
+port: 42071
+icon: "https://raw.githubusercontent.com/rickeyhenderson73-ops/libre-parasite-miner/main/parasite-libre-btc/icon.png"
+gallery:
+  - "https://raw.githubusercontent.com/rickeyhenderson73-ops/libre-parasite-miner/main/parasite-libre-btc/icon.png"
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+widgets:
+  - id: "mining-stats"
+    type: "three-stats"
+    refresh: "10s"
+    endpoint: "parasite-app:3000/api/widget/mining"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Hashrate"
+          text: "10.5"
+          subtext: "TH/s"
+        - title: "Shares"
+          text: "42"
+          subtext: "accepted"
+        - title: "Difficulty"
+          text: "256M"
+          subtext: "current"
+  - id: "pool-status"
+    type: "text-with-progress"
+    refresh: "5s"
+    endpoint: "parasite-app:3000/api/widget/status"
+    link: ""
+    example:
+      type: "text-with-progress"
+      link: ""
+      title: "Pool Status"
+      text: "Connected"
+      progressLabel: "Active"
+      progress: 1.0
+backupIgnore:
+  - data/stratum/logs
+submitter: rickeyhenderson73-ops

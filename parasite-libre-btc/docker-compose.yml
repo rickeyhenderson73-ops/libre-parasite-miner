@@ -1,0 +1,125 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: parasite-app
+      APP_PORT: 3000
+      JWT_SECRET: "${JWT_SECRET}"
+    networks:
+      - umbrel_main_network
+
+  init:
+    image: alpine:3.22.1
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}:/appdata
+      - ${APP_DATA_DIR}/data/templates:/data/templates:rw
+    environment:
+      APPS_SUBNET: "${NETWORK_IP}/16"
+      LIBRE_RPC_HOST: "localhost"
+      LIBRE_RPC_PORT: "8332"
+      LIBRE_RPC_USER: ""
+      LIBRE_RPC_PASS: ""
+      POOL_WALLET: "CHANGEME_BTC_WALLET_ADDRESS"
+      PARASITE_HOST: "parasite.wtf"
+      PARASITE_PORT: "42069"
+    command:
+      - /bin/sh
+      - -ec
+      - |-
+        set -eu
+
+        apk add --no-cache envsubst >/dev/null
+
+        # Persist JWT secret
+        if [ -n "$${JWT_SECRET:-}" ]; then
+          envfile="/appdata/.env"
+          tmp="/appdata/.env.tmp"
+          if [ -f "$$envfile" ]; then
+            grep -v '^JWT_SECRET=' "$$envfile" > "$$tmp" || true
+          else
+            : > "$$tmp"
+          fi
+          printf "JWT_SECRET=%s\n" "$$JWT_SECRET" >> "$$tmp"
+          chmod 600 "$$tmp" || true
+          chown 1000:1000 "$$tmp" || true
+          mv "$$tmp" "$$envfile"
+        fi
+
+        # Create data directories
+        mkdir -p /data/stratum/config /data/stratum/logs /data/stratum/www
+
+        # Ensure template scripts are executable
+        chmod +x /data/templates/stratum-entrypoint.sh 2>/dev/null || true
+        chown 1000:1000 /data/templates/stratum-entrypoint.sh 2>/dev/null || true
+
+        # Ensure settings.yml is writable
+        touch /appdata/settings.yml
+        chown 1000:1000 /appdata/settings.yml || true
+
+        # Generate stratum proxy config from template
+        if [ ! -f /data/stratum/config/stratum.conf ]; then
+          envsubst < /data/templates/stratum.conf.template > /data/stratum/config/stratum.conf
+          chown -R 1000:1000 /data/stratum
+        else
+          # Update config if variables changed
+          envsubst < /data/templates/stratum.conf.template > /data/stratum/config/stratum.conf
+          chown 1000:1000 /data/stratum/config/stratum.conf || true
+        fi
+
+  stratum-proxy:
+    image: ghcr.io/rickeyhenderson73-ops/parasite-stratum-proxy:latest
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 10s
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    ports:
+      - "42070:3333/tcp"
+    volumes:
+      - ${APP_DATA_DIR}/data/stratum/config:/config:ro
+      - ${APP_DATA_DIR}/data/stratum/logs:/logs
+      - ${APP_DATA_DIR}/data/templates/stratum-entrypoint.sh:/stratum-entrypoint.sh:ro
+    environment:
+      POOL_WALLET: "${POOL_WALLET}"
+      PARASITE_HOST: "parasite.wtf"
+      PARASITE_PORT: "42069"
+      LIBRE_RPC_HOST: "${LIBRE_RPC_HOST}"
+      LIBRE_RPC_PORT: "${LIBRE_RPC_PORT}"
+      LIBRE_RPC_USER: "${LIBRE_RPC_USER}"
+      LIBRE_RPC_PASS: "${LIBRE_RPC_PASS}"
+    entrypoint: ["/bin/sh", "/stratum-entrypoint.sh"]
+
+  app:
+    image: ghcr.io/rickeyhenderson73-ops/parasite-app:0.1.0
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 10s
+    depends_on:
+      - stratum-proxy
+    networks:
+      default:
+        aliases:
+          - parasite-app
+      umbrel_main_network:
+        aliases:
+          - parasite-app
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}:/appdata
+    environment:
+      STRATUM_LOG_DIR: "/data/stratum/logs"
+      STRATUM_WWW_DIR: "/data/stratum/www"
+      POOL_WALLET: "${POOL_WALLET}"
+      PARASITE_HOST: "parasite.wtf"
+      PARASITE_PORT: "42069"
+      LIBRE_RPC_HOST: "${LIBRE_RPC_HOST}"
+      LIBRE_RPC_PORT: "${LIBRE_RPC_PORT}"
+      NODE_ENV: "production"
+
+networks:
+  umbrel_main_network:
+    external: true
+    name: umbrel_main_network
