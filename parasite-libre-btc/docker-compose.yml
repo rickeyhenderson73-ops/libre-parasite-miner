@@ -17,7 +17,7 @@ services:
       - ${APP_DATA_DIR}/data/templates:/data/templates:rw
     environment:
       APPS_SUBNET: "${NETWORK_IP}/16"
-      LIBRE_RPC_HOST: "localhost"
+      LIBRE_RPC_HOST: "libre-app"
       LIBRE_RPC_PORT: "8332"
       LIBRE_RPC_USER: ""
       LIBRE_RPC_PASS: ""
@@ -86,11 +86,13 @@ services:
       POOL_WALLET: "${POOL_WALLET}"
       PARASITE_HOST: "parasite.wtf"
       PARASITE_PORT: "42069"
-      LIBRE_RPC_HOST: "${LIBRE_RPC_HOST}"
-      LIBRE_RPC_PORT: "${LIBRE_RPC_PORT}"
+      LIBRE_RPC_HOST: "libre-app"
+      LIBRE_RPC_PORT: "8332"
       LIBRE_RPC_USER: "${LIBRE_RPC_USER}"
       LIBRE_RPC_PASS: "${LIBRE_RPC_PASS}"
     entrypoint: ["/bin/sh", "/stratum-entrypoint.sh"]
+    networks:
+      - umbrel_main_network
 
   app:
     image: ghcr.io/rickeyhenderson73-ops/parasite-app:0.1.0
@@ -115,8 +117,8 @@ services:
       POOL_WALLET: "${POOL_WALLET}"
       PARASITE_HOST: "parasite.wtf"
       PARASITE_PORT: "42069"
-      LIBRE_RPC_HOST: "${LIBRE_RPC_HOST}"
-      LIBRE_RPC_PORT: "${LIBRE_RPC_PORT}"
+      LIBRE_RPC_HOST: "libre-app"
+      LIBRE_RPC_PORT: "8332"
       NODE_ENV: "production"
 
 networks:
