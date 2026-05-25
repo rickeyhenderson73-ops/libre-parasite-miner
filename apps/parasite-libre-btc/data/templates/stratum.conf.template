@@ -1,0 +1,23 @@
+{
+  "listen": [
+    {
+      "host": "0.0.0.0",
+      "port": 3333
+    }
+  ],
+  "pool": {
+    "host": "${PARASITE_HOST}",
+    "port": ${PARASITE_PORT}
+  },
+  "libre": {
+    "host": "${LIBRE_RPC_HOST}",
+    "port": ${LIBRE_RPC_PORT},
+    "user": "${LIBRE_RPC_USER}",
+    "pass": "${LIBRE_RPC_PASS}"
+  },
+  "wallet": "${POOL_WALLET}",
+  "worker_name": "parasite-libre-umbrel",
+  "diff": 256,
+  "log_dir": "/logs",
+  "log_level": "info"
+}
